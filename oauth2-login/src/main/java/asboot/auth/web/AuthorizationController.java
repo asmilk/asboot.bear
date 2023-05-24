@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package asboot.auth.ctrl;
+package asboot.auth.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 

@@ -17,6 +17,7 @@ package asboot.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,18 +30,25 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration(proxyBeanMethods = false)
 public class ResourceServerConfig {
 
-	// @formatter:off
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//		http
+//			.securityMatcher("/messages/**")
+//				.authorizeHttpRequests()
+//					.requestMatchers("/messages/**").hasAuthority("SCOPE_message.read")
+//					.and()
+//			.oauth2ResourceServer()
+//				.jwt();
+		// @formatter:off
 		http
-			.securityMatcher("/messages/**")
-				.authorizeHttpRequests()
+			.authorizeHttpRequests(authorize -> 
+				authorize
 					.requestMatchers("/messages/**").hasAuthority("SCOPE_message.read")
-					.and()
-			.oauth2ResourceServer()
-				.jwt();
+					.anyRequest().authenticated())
+			.oauth2ResourceServer(oauth2ResourceServer ->
+				oauth2ResourceServer.jwt(Customizer.withDefaults()));
+		// @formatter:on
 		return http.build();
 	}
-	// @formatter:on
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package asboot.auth.ctrl;
+package asboot.auth.web;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author Joe Grandja
- * @since 0.0.1
+ * @author Steve Riesenberg
+ * @since 1.1
  */
-@RestController
-public class MessagesController {
+@Controller
+public class LoginController {
 
-	@GetMapping("/messages")
-	public String[] getMessages() {
-		return new String[] {"Message 1", "Message 2", "Message 3"};
+	@GetMapping("/login")
+	public String login() {
+		return "login";
 	}
+
 }

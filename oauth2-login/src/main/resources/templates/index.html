@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +9,18 @@
 <body>
 <div th:replace="~{page-templates :: navbar}"></div>
 <div class="container">
+	<dl>
+		<dt>name:</dt>
+		<dd sec:authentication="name" />
+		<dt>principal:</dt>
+		<dd sec:authentication="principal" />
+		<dt>credentials:</dt>
+		<dd sec:authentication="credentials" />
+		<dt>authorities:</dt>
+		<dd sec:authentication="authorities" />
+		<dt>details:</dt>
+		<dd sec:authentication="details" />
+	</dl>
     <div th:replace="~{page-templates :: error-message}"></div>
     <div th:replace="~{page-templates :: message-list}"></div>
 </div>

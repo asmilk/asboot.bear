@@ -1,39 +1,32 @@
 server:
   port: 9000
-  
-logging:
-  level:
-    root: info
-    '[org.springframework.security]': debug
 
 spring:
-  application:
-    name: oauth2-authorization
   security:
-    user:
-      name: user1
-      password: password
     oauth2:
-      authorizationserver:
-        client:
-          messaging-client:
-            registration:
-              client-id: "messaging-client"
-              client-secret: "{noop}secret"
-              client-authentication-methods:
-                - "client_secret_basic"
-              authorization-grant-types:
-                - "authorization_code"
-                - "refresh_token"
-                - "client_credentials"
-              redirect-uris:
-                - "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc"
-                - "http://127.0.0.1:8080/authorized"
-              post-logout-redirect-uris:
-                - "http://127.0.0.1:8080/logged-out"
-              scopes:
-                - "openid"
-                - "profile"
-                - "message.read"
-                - "message.write"
-            require-authorization-consent: true
+      client:
+        registration:
+          google-idp:
+            provider: google
+            client-id: ${GOOGLE_CLIENT_ID:google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:google-client-secret}
+            scope: openid, https://www.googleapis.com/auth/userinfo.profile, https://www.googleapis.com/auth/userinfo.email
+            client-name: Sign in with Google
+          github-idp:
+            provider: github
+            client-id: 0fbb4585ef3eb16bbe8b
+            client-secret: 4cd5b762e818556145eda960d67d24bc83750f85
+            scope: user:email, read:user
+            client-name: Sign in with GitHub
+        provider:
+          google:
+            user-name-attribute: email
+          github:
+            user-name-attribute: login
+
+logging:
+  level:
+    root: INFO
+    '[org.springframework.web]': INFO
+    '[org.springframework.security]': INFO
+    '[org.springframework.security.oauth2]': INFO
