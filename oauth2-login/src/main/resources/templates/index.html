@@ -9,6 +9,12 @@
 <body>
 <div th:replace="~{page-templates :: navbar}"></div>
 <div class="container">
+	<h6>hasRole:</h6>
+	<ul>
+		<li sec:authorize="hasRole('ROLE_USER')">[ROLE_USER]</li>
+		<li sec:authorize="hasRole('ROLE_STAFF')">[ROLE_STAFF]</li>
+		<li sec:authorize="hasRole('ROLE_ADMIN')">[ROLE_ADMIN]</li>
+	</ul>
 	<dl>
 		<dt>name:</dt>
 		<dd sec:authentication="name" />

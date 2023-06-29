@@ -44,8 +44,8 @@ public class SecurityConfig {
 
     // @formatter:off
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                                          ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, 
+    		ClientRegistrationRepository clientRegistrationRepository) throws Exception {
 		http
 			.authorizeHttpRequests(authorize ->
 				authorize

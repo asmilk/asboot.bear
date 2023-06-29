@@ -15,14 +15,19 @@
  */
 package asboot.auth.web;
 
+import java.security.Principal;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Joe Grandja
  * @author Dmitriy Dubson
  * @since 0.0.1
  */
+@Slf4j
 @Controller
 public class DefaultController {
 
@@ -32,7 +37,8 @@ public class DefaultController {
 	}
 
 	@GetMapping("/index")
-	public String index() {
+	public String index(Principal principal) {
+		log.info("principal:{}", principal);
 		return "index";
 	}
 
