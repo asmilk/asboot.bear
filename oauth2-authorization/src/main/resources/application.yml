@@ -30,3 +30,7 @@ logging:
     '[org.springframework.web]': DEBUG
     '[org.springframework.security]': DEBUG
     '[org.springframework.security.oauth2]': DEBUG
+
+jwt:
+  private.key: classpath:pkcs8_rsa_private_key.pem
+  public.key: classpath:rsa_public_key.pem

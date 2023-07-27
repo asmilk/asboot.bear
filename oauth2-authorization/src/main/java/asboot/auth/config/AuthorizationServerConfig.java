@@ -1,7 +1,10 @@
 package asboot.auth.config;
 
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -37,13 +40,17 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
-import asboot.auth.jose.Jwks;
-
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
 
 	private static final String LOGIN_FORM_URL = "/login";
 	private static final String CONSENT_PAGE_URL = "/oauth2/consent";
+
+	@Value("${jwt.public.key}")
+	public RSAPublicKey publicKey;
+
+	@Value("${jwt.private.key}")
+	public RSAPrivateKey privateKey;
 
 	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
@@ -117,7 +124,8 @@ public class AuthorizationServerConfig {
 
 	@Bean
 	JWKSource<SecurityContext> jwkSource() {
-		RSAKey rsaKey = Jwks.generateRsa();
+		RSAKey rsaKey = new RSAKey.Builder(this.publicKey).privateKey(this.privateKey)
+				.keyID(UUID.randomUUID().toString()).build();
 		JWKSet jwkSet = new JWKSet(rsaKey);
 		return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
 	}
