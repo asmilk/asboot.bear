@@ -10,7 +10,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+
+import asboot.auth.federation.FederatedIdentityAuthenticationSuccessHandler;
 
 @EnableWebSecurity
 @Configuration(proxyBeanMethods = false)
@@ -30,9 +33,19 @@ public class DefaultSecurityConfig {
 			.formLogin(formLogin ->
 				formLogin
 					.loginPage("/login")
+			)
+			.oauth2Login(oauth2Login ->
+				oauth2Login
+					.loginPage("/login")
+					.successHandler(authenticationSuccessHandler())
 			);
+		
 		// @formatter:on
 		return http.build();
+	}
+
+	private AuthenticationSuccessHandler authenticationSuccessHandler() {
+		return new FederatedIdentityAuthenticationSuccessHandler();
 	}
 
 	@Bean

@@ -40,16 +40,18 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
+import asboot.auth.federation.OktaOAuth2AuthorizationRowMapper;
+
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
 
 	private static final String LOGIN_FORM_URL = "/login";
 	private static final String CONSENT_PAGE_URL = "/oauth2/consent";
 
-	@Value("${jwt.public.key}")
+	@Value("${jwk.public}")
 	public RSAPublicKey publicKey;
 
-	@Value("${jwt.private.key}")
+	@Value("${jwk.private}")
 	public RSAPrivateKey privateKey;
 
 	@Bean
@@ -112,7 +114,9 @@ public class AuthorizationServerConfig {
 	@Bean
 	OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
 			RegisteredClientRepository registeredClientRepository) {
-		return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+		JdbcOAuth2AuthorizationService service = new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+		service.setAuthorizationRowMapper(new OktaOAuth2AuthorizationRowMapper(registeredClientRepository));
+		return service;
 	}
 
 	@Bean

@@ -2,6 +2,8 @@ server:
   port: 9000
 
 spring:
+  thymeleaf:
+    cache: false
   security:
     oauth2:
       client:
@@ -18,19 +20,34 @@ spring:
             client-secret: 4cd5b762e818556145eda960d67d24bc83750f85
             scope: user:email, read:user
             client-name: Sign in with GitHub
+          okta-idp:
+            provider: okta
+            client-id: 0oa1s2nzpl2PI1xy20h8
+            client-secret: K0UZFyVlw1J3UB9Be-zbMRAqYZLTm3eWoERmFQuM26ciX7pqPDspROfGh0MBHom4
+            scope: openid, profile, email, address, phone
+            client-name: Sign in with Okta
         provider:
           google:
             user-name-attribute: email
           github:
             user-name-attribute: login
+          okta:
+            user-name-attribute: email
+            issuer-uri: https://dev-898029.oktapreview.com
+            #authorization-uri: https://dev-898029.oktapreview.com/oauth2/v1/authorize
+            #token-uri: https://dev-898029.oktapreview.com/oauth2/v1/token
+            #user-info-uri: https://dev-898029.oktapreview.com/oauth2/v1/userinfo
+            #jwk-set-uri: https://dev-898029.oktapreview.com/oauth2/v1/keys
 
 logging:
+  file:
+    name: auth-server.log
   level:
     root: INFO
     '[org.springframework.web]': DEBUG
     '[org.springframework.security]': DEBUG
     '[org.springframework.security.oauth2]': DEBUG
 
-jwt:
-  private.key: classpath:pkcs8_rsa_private_key.pem
-  public.key: classpath:rsa_public_key.pem
+jwk:
+  private: classpath:pkcs8_rsa_private_key.pem
+  public: classpath:rsa_public_key.pem
