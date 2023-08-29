@@ -2,6 +2,8 @@ package asboot.auth.config;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -14,16 +16,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -31,6 +38,8 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -41,17 +50,19 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
 import asboot.auth.federation.OktaOAuth2AuthorizationRowMapper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
 
 	private static final String LOGIN_FORM_URL = "/login";
 	private static final String CONSENT_PAGE_URL = "/oauth2/consent";
 
-	@Value("${jwk.public}")
+	@Value("${jwk.public-key}")
 	public RSAPublicKey publicKey;
 
-	@Value("${jwk.private}")
+	@Value("${jwk.private-key}")
 	public RSAPrivateKey privateKey;
 
 	@Bean
@@ -62,8 +73,53 @@ public class AuthorizationServerConfig {
 
 		// @formatter:off
 		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+			
+			.clientAuthentication(client -> 
+				client.authenticationProvider(new AuthenticationProvider() {
+
+					@Override
+					public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+						// TODO Auto-generated method stub
+						return null;
+					}
+	
+					@Override
+					public boolean supports(Class<?> authentication) {
+						// TODO Auto-generated method stub
+						return false;
+					}
+				}))
 			.authorizationEndpoint(authorizationEndpoint ->
-				authorizationEndpoint.consentPage(CONSENT_PAGE_URL))
+				authorizationEndpoint
+					.consentPage(CONSENT_PAGE_URL)
+					.authenticationProvider(new AuthenticationProvider() {
+
+						@Override
+						public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+							// TODO Auto-generated method stub
+							return null;
+						}
+	
+						@Override
+						public boolean supports(Class<?> authentication) {
+							// TODO Auto-generated method stub
+							return false;
+						}
+					}))
+			.tokenEndpoint(tokenEndpoint -> 
+				tokenEndpoint.authenticationProvider(new AuthenticationProvider() {
+
+					@Override
+					public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+						// TODO Auto-generated method stub
+						return null;
+					}
+
+					@Override
+					public boolean supports(Class<?> authentication) {
+						// TODO Auto-generated method stub
+						return false;
+					}}))
 			.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 		
 		http
@@ -97,6 +153,9 @@ public class AuthorizationServerConfig {
 				.postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
+				.scope(OidcScopes.EMAIL)
+				.scope(OidcScopes.ADDRESS)
+				.scope(OidcScopes.PHONE)
 				.scope("message.read")
 				.scope("message.write")
 				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
@@ -114,7 +173,8 @@ public class AuthorizationServerConfig {
 	@Bean
 	OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
 			RegisteredClientRepository registeredClientRepository) {
-		JdbcOAuth2AuthorizationService service = new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+		JdbcOAuth2AuthorizationService service = new JdbcOAuth2AuthorizationService(jdbcTemplate,
+				registeredClientRepository);
 		service.setAuthorizationRowMapper(new OktaOAuth2AuthorizationRowMapper(registeredClientRepository));
 		return service;
 	}
@@ -124,6 +184,29 @@ public class AuthorizationServerConfig {
 			RegisteredClientRepository registeredClientRepository) {
 		// Will be used by the ConsentController
 		return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
+	}
+
+	@Bean
+	OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+		return (context) -> {
+			OAuth2TokenType tokenType = context.getTokenType();
+			AuthorizationGrantType grantType = context.getAuthorizationGrantType();
+			Authentication principal = context.getPrincipal();
+
+			if (AuthorizationGrantType.AUTHORIZATION_CODE.equals(grantType)
+					|| AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
+				if (OAuth2TokenType.ACCESS_TOKEN.equals(tokenType)
+						|| OidcParameterNames.ID_TOKEN.equals(tokenType.getValue())) {
+
+					String[] authorities = principal.getAuthorities().stream().map(item -> item.getAuthority())
+							.toArray(String[]::new);
+					log.info("authorities:{}", Arrays.toString(authorities));
+					context.getClaims()
+							.claims(claims -> claims.put("role", new ArrayList<String>(Arrays.asList(authorities))));
+				}
+			}
+
+		};
 	}
 
 	@Bean

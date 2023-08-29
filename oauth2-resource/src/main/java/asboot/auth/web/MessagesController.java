@@ -15,6 +15,7 @@
  */
 package asboot.auth.web;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,7 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class MessagesController {
 
 	@GetMapping("/messages")
+	@PreAuthorize("principal.claims['role'] != null and principal.claims['role'].contains('ROLE_ADMIN')")
 	public String[] getMessages() {
-		return new String[] {"Message 1", "Message 2", "Message 3"};
+		return new String[] { "Message 1", "Message 2", "Message 3" };
 	}
 }

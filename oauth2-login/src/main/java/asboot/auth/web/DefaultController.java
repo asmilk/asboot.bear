@@ -17,7 +17,10 @@ package asboot.auth.web;
 
 import java.security.Principal;
 
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +40,11 @@ public class DefaultController {
 	}
 
 	@GetMapping("/index")
-	public String index(Principal principal) {
+	public String index(Principal principal,
+			@RegisteredOAuth2AuthorizedClient("messaging-client-oidc") OAuth2AuthorizedClient authorizedClient, Model model) {
 		log.info("principal:{}", principal);
+		log.info("authorizedClient:{}", authorizedClient);
+		model.addAttribute("authorizedClient", authorizedClient);
 		return "index";
 	}
 

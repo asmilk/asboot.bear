@@ -24,6 +24,10 @@
 		<dd sec:authentication="principal" />
 		<dt>principal.class:</dt>
 		<dd sec:authentication="principal.class" />
+		<dt>principal.claims:</dt>
+		<dd sec:authentication="principal.claims" />
+		<dt>principal.claims['role']:</dt>
+		<dd sec:authentication="principal.claims['role']" />
 		<dt>principal.idToken.tokenValue:</dt>
 		<dd sec:authentication="principal.idToken.tokenValue" />
 		<dt>credentials:</dt>
@@ -32,6 +36,8 @@
 		<dd sec:authentication="authorities" />
 		<dt>details:</dt>
 		<dd sec:authentication="details" />
+		<dt>authorizedClient</dt>
+		<dd>${authorizedClient}</dd>
 	</dl>
     <div th:replace="~{page-templates :: error-message}"></div>
     <div th:replace="~{page-templates :: message-list}"></div>

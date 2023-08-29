@@ -4,9 +4,10 @@ server:
 logging:
   level:
     root: INFO
-    '[org.springframework.web]': DEBUG
-    '[org.springframework.security]': DEBUG
-    '[org.springframework.security.oauth2]': DEBUG
+    '[org.springframework.http]': TRACE
+    '[org.springframework.web]': TRACE
+    '[org.springframework.security]': TRACE
+    '[org.springframework.security.oauth2]': TRACE
 
 spring:
   thymeleaf:
@@ -21,7 +22,7 @@ spring:
             client-secret: secret
             authorization-grant-type: authorization_code
             redirect-uri: "http://127.0.0.1:8080/login/oauth2/code/{registrationId}"
-            scope: openid, profile
+            scope: openid, profile, email, address, phone
             client-name: messaging-client-oidc
           messaging-client-authorization-code:
             provider: spring

@@ -44,10 +44,11 @@ logging:
     name: auth-server.log
   level:
     root: INFO
-    '[org.springframework.web]': DEBUG
-    '[org.springframework.security]': DEBUG
-    '[org.springframework.security.oauth2]': DEBUG
+    '[org.springframework.http]': TRACE
+    '[org.springframework.web]': TRACE
+    '[org.springframework.security]': TRACE
+    '[org.springframework.security.oauth2]': TRACE
 
 jwk:
-  private: classpath:pkcs8_rsa_private_key.pem
-  public: classpath:rsa_public_key.pem
+  public-key: classpath:rsa_public_key.pem
+  private-key: classpath:pkcs8_rsa_private_key.pem
