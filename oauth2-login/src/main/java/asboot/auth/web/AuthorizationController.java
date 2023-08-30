@@ -61,6 +61,7 @@ public class AuthorizationController {
 				.bodyToMono(String[].class)
 				.block();
 		model.addAttribute("messages", messages);
+		model.addAttribute("authorizedClient", authorizedClient);
 
 		return "index";
 	}
@@ -92,6 +93,7 @@ public class AuthorizationController {
 				.bodyToMono(String[].class)
 				.block();
 		model.addAttribute("messages", messages);
+		model.addAttribute("authorizedClient", "client_credentials");
 
 		return "index";
 	}

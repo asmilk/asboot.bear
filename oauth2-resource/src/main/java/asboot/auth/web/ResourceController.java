@@ -9,27 +9,27 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/res")
 public class ResourceController {
 	
-	@PreAuthorize("@authz.decide(authentication, principal.claims['role'], #root)")
-	@GetMapping("/decide")
-	public String decide() {
-		return "decide";
+	@GetMapping("/check")
+	@PreAuthorize("@authz.check(authentication, principal, #root)")
+	public String check() {
+		return "check";
 	}
 	
 	@PreAuthorize("principal.claims['role'] != null and principal.claims['role'].contains('ROLE_ADMIN')")
 	@GetMapping("/claim/admin")
-	public String claimAdmin() {
+	public String admin() {
 		return "claim_admin";
 	}
 	
 	@PreAuthorize("principal.claims['role'] != null and principal.claims['role'].contains('ROLE_STAFF')")
 	@GetMapping("/claim/staff")
-	public String claimStaff() {
+	public String staff() {
 		return "claim_staff";
 	}
 	
 	@PreAuthorize("principal.claims['role'] != null and principal.claims['role'].contains('ROLE_USER')")
 	@GetMapping("/claim/user")
-	public String claimUser() {
+	public String user() {
 		return "claim_user";
 	}
 	
@@ -51,22 +51,22 @@ public class ResourceController {
 		return "role_user";
 	}
 	
-	@PreAuthorize("hasAuthority('ROLE_ADMIN')")
-	@GetMapping("/auth/admin")
-	public String auth_Admin() {
-		return "auth_admin";
+	@PreAuthorize("hasAuthority('SCOPE_email')")
+	@GetMapping("/auth/scp/email")
+	public String getEmail() {
+		return "auth_scope_email";
 	}
 	
-	@PreAuthorize("hasAuthority('ROLE_STAFF')")
-	@GetMapping("/auth/staff")
-	public String authStaff() {
-		return "auth_staff";
+	@PreAuthorize("hasAuthority('SCOPE_message.read')")
+	@GetMapping("/auth/scp/msg/read")
+	public String readMessage() {
+		return "auth_scope_msg_read";
 	}
 	
-	@PreAuthorize("hasAuthority('ROLE_USER')")
-	@GetMapping("/auth/user")
-	public String authUser() {
-		return "auth_user";
+	@PreAuthorize("hasAuthority('SCOPE_message.write')")
+	@GetMapping("/auth/scp/msg/write")
+	public String writeMessage() {
+		return "auth_scope_msg_write";
 	}
 
 }

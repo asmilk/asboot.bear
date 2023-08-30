@@ -41,9 +41,12 @@ public class DefaultController {
 
 	@GetMapping("/index")
 	public String index(Principal principal,
-			@RegisteredOAuth2AuthorizedClient("messaging-client-oidc") OAuth2AuthorizedClient authorizedClient, Model model) {
+			@RegisteredOAuth2AuthorizedClient("messaging-client-oidc") OAuth2AuthorizedClient authorizedClient, 
+//			@RegisteredOAuth2AuthorizedClient("messaging-client-authorization-code") OAuth2AuthorizedClient codeAuthorizedClient, 
+			Model model) {
 		log.info("principal:{}", principal);
 		log.info("authorizedClient:{}", authorizedClient);
+//		log.info("codeAuthorizedClient:{}", codeAuthorizedClient);
 		model.addAttribute("authorizedClient", authorizedClient);
 		return "index";
 	}

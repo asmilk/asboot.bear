@@ -3,7 +3,7 @@ package asboot.auth.config;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -16,11 +16,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -73,53 +71,8 @@ public class AuthorizationServerConfig {
 
 		// @formatter:off
 		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-			
-			.clientAuthentication(client -> 
-				client.authenticationProvider(new AuthenticationProvider() {
-
-					@Override
-					public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-						// TODO Auto-generated method stub
-						return null;
-					}
-	
-					@Override
-					public boolean supports(Class<?> authentication) {
-						// TODO Auto-generated method stub
-						return false;
-					}
-				}))
 			.authorizationEndpoint(authorizationEndpoint ->
-				authorizationEndpoint
-					.consentPage(CONSENT_PAGE_URL)
-					.authenticationProvider(new AuthenticationProvider() {
-
-						@Override
-						public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-							// TODO Auto-generated method stub
-							return null;
-						}
-	
-						@Override
-						public boolean supports(Class<?> authentication) {
-							// TODO Auto-generated method stub
-							return false;
-						}
-					}))
-			.tokenEndpoint(tokenEndpoint -> 
-				tokenEndpoint.authenticationProvider(new AuthenticationProvider() {
-
-					@Override
-					public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-						// TODO Auto-generated method stub
-						return null;
-					}
-
-					@Override
-					public boolean supports(Class<?> authentication) {
-						// TODO Auto-generated method stub
-						return false;
-					}}))
+				authorizationEndpoint.consentPage(CONSENT_PAGE_URL))
 			.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 		
 		http
@@ -198,11 +151,10 @@ public class AuthorizationServerConfig {
 				if (OAuth2TokenType.ACCESS_TOKEN.equals(tokenType)
 						|| OidcParameterNames.ID_TOKEN.equals(tokenType.getValue())) {
 
-					String[] authorities = principal.getAuthorities().stream().map(item -> item.getAuthority())
-							.toArray(String[]::new);
-					log.info("authorities:{}", Arrays.toString(authorities));
-					context.getClaims()
-							.claims(claims -> claims.put("role", new ArrayList<String>(Arrays.asList(authorities))));
+					List<String> authorities = principal.getAuthorities().stream().map(item -> item.getAuthority())
+							.toList();
+					log.info("authorities:{}", authorities);
+					context.getClaims().claims(claims -> claims.put("role", new ArrayList<String>(authorities)));
 				}
 			}
 

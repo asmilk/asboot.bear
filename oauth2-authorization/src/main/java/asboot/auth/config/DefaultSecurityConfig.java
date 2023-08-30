@@ -2,11 +2,8 @@ package asboot.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
@@ -26,21 +23,6 @@ public class DefaultSecurityConfig {
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 		// @formatter:off
 		http
-			.authenticationProvider(new AuthenticationProvider() {
-
-				@Override
-				public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-					// TODO Auto-generated method stub
-					return null;
-				}
-
-				@Override
-				public boolean supports(Class<?> authentication) {
-					// TODO Auto-generated method stub
-					return false;
-				}
-				
-			})
 			.authorizeHttpRequests(authorize ->
 				authorize
 					.requestMatchers("/assets/**", "/webjars/**", "/login").permitAll()
@@ -69,7 +51,7 @@ public class DefaultSecurityConfig {
 	@Bean
 	UserDetailsService userDetailsService() {
 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-		manager.createUser(User.withUsername("admin").password("{noop}123456").roles("ADMIN", "STAFF", "USER").build());
+		manager.createUser(User.withUsername("admin").password("{noop}123456").roles("ADMIN").build());
 		manager.createUser(User.withUsername("staff").password("{noop}123456").roles("STAFF").build());
 		manager.createUser(User.withUsername("user").password("{noop}123456").roles("USER").build());
 		manager.createUser(User.withUsername("guest").password("{noop}123456").roles("GUEST").build());

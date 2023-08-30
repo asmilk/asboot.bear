@@ -15,18 +15,33 @@
  */
 package asboot.auth.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Joe Grandja
@@ -34,17 +49,18 @@ import static org.springframework.security.config.Customizer.withDefaults;
  * @author Steve Riesenberg
  * @since 0.0.1
  */
+@Slf4j
 @EnableWebSecurity
 @EnableMethodSecurity
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
-    @Bean
-    WebSecurityCustomizer webSecurityCustomizer() {
+	@Bean
+	WebSecurityCustomizer webSecurityCustomizer() {
 		return (web) -> web.ignoring().requestMatchers("/webjars/**", "/assets/**");
 	}
 
-    // @formatter:off
+	// @formatter:off
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, 
     		ClientRegistrationRepository clientRegistrationRepository) throws Exception {
@@ -55,7 +71,29 @@ public class SecurityConfig {
 					.anyRequest().authenticated()
 			)
 			.oauth2Login(oauth2Login ->
-				oauth2Login.loginPage("/oauth2/authorization/messaging-client-oidc"))
+				oauth2Login
+					.loginPage("/oauth2/authorization/messaging-client-oidc")
+					.userInfoEndpoint(userInfoEndpoint -> 
+						userInfoEndpoint.userAuthoritiesMapper(authorities -> {
+							Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+							mappedAuthorities.addAll(authorities);
+							authorities.forEach(authority -> {
+								if (OidcUserAuthority.class.isInstance(authority)) {
+									log.info("authority:{}", authority);
+									OidcUserAuthority oidcUserAuthority = (OidcUserAuthority)authority;
+
+									OidcIdToken idToken = oidcUserAuthority.getIdToken();
+									List<String> role = idToken.getClaimAsStringList("role");
+									List<SimpleGrantedAuthority> roleList = role.stream().map(SimpleGrantedAuthority::new).toList();
+									mappedAuthorities.addAll(roleList);
+									
+								}
+							});
+							return mappedAuthorities;
+						}
+						)
+					)
+			)
 			.oauth2Client(withDefaults())
 			.logout(logout ->
 				logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
@@ -63,16 +101,36 @@ public class SecurityConfig {
 	}
 	// @formatter:on
 
-	private LogoutSuccessHandler oidcLogoutSuccessHandler(
-			ClientRegistrationRepository clientRegistrationRepository) {
-		OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler =
-				new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+	private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+		OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
+				clientRegistrationRepository);
 
 		// Set the location that the End-User's User Agent will be redirected to
 		// after the logout has been performed at the Provider
 		oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/logged-out");
 
 		return oidcLogoutSuccessHandler;
+	}
+
+	@Bean
+	RoleHierarchy roleHierarchy() {
+		RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+		roleHierarchy.setHierarchy("ROLE_ADMIN > ROLE_STAFF > ROLE_USER" + System.getProperty("line.separator")
+				+ "ROLE_A > ROLE_B > ROLE_C");
+		return roleHierarchy;
+
+	}
+
+	@Bean
+	MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+		DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+		expressionHandler.setRoleHierarchy(roleHierarchy);
+		return expressionHandler;
+	}
+
+	@Bean
+	HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
 	}
 
 }

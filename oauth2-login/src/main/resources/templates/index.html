@@ -36,8 +36,8 @@
 		<dd sec:authentication="authorities" />
 		<dt>details:</dt>
 		<dd sec:authentication="details" />
-		<dt>authorizedClient</dt>
-		<dd>${authorizedClient}</dd>
+		<dt>accessToken.tokenValue:</dt>
+		<dd th:text="${authorizedClient}"></dd>
 	</dl>
     <div th:replace="~{page-templates :: error-message}"></div>
     <div th:replace="~{page-templates :: message-list}"></div>
