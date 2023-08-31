@@ -11,10 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component("authz")
 public class AuthorizationLogic {
 
-	public boolean check(JwtAuthenticationToken token, Jwt jwt, MethodSecurityExpressionOperations operations) {
+	public boolean check(MethodSecurityExpressionOperations root, JwtAuthenticationToken token, Jwt jwt, String uid) {
+		log.info("root:{}", root);
 		log.info("token:{}", token);
 		log.info("jwt:{}", jwt);
-		log.info("operations:{}", operations);
+		log.info("uid:{}", uid);
 		return true;
 	}
 

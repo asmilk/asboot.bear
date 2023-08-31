@@ -13,14 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthorizationLogic {
 
 	public boolean decide(OAuth2AuthenticationToken token, List<String> role,
-			MethodSecurityExpressionOperations operations) {
+			MethodSecurityExpressionOperations root) {
 		log.info("token:{}", token);
 //		log.info("principal:{}", principal);
-		log.info("operations:{}", operations);
+		log.info("root:{}", root);
 
 //		List<String> role = principal.getClaimAsStringList("role");
 		log.info("role:{}", role);
-		boolean a = role.contains("");
 		return true;
 	}
 

@@ -33,6 +33,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
@@ -57,51 +58,30 @@ public class SecurityConfig {
 
 	@Bean
 	WebSecurityCustomizer webSecurityCustomizer() {
-		return (web) -> web.ignoring().requestMatchers("/webjars/**", "/assets/**");
+		return web -> web.ignoring().requestMatchers("/webjars/**", "/assets/**");
 	}
 
-	// @formatter:off
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, 
-    		ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity http, LogoutSuccessHandler logoutSuccessHandler)
+			throws Exception {
+		// @formatter:off
 		http
-			.authorizeHttpRequests(authorize ->
-				authorize
-					.requestMatchers("/logged-out").permitAll()
-					.anyRequest().authenticated()
-			)
-			.oauth2Login(oauth2Login ->
-				oauth2Login
-					.loginPage("/oauth2/authorization/messaging-client-oidc")
-					.userInfoEndpoint(userInfoEndpoint -> 
-						userInfoEndpoint.userAuthoritiesMapper(authorities -> {
-							Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
-							mappedAuthorities.addAll(authorities);
-							authorities.forEach(authority -> {
-								if (OidcUserAuthority.class.isInstance(authority)) {
-									log.info("authority:{}", authority);
-									OidcUserAuthority oidcUserAuthority = (OidcUserAuthority)authority;
-
-									OidcIdToken idToken = oidcUserAuthority.getIdToken();
-									List<String> role = idToken.getClaimAsStringList("role");
-									List<SimpleGrantedAuthority> roleList = role.stream().map(SimpleGrantedAuthority::new).toList();
-									mappedAuthorities.addAll(roleList);
-									
-								}
-							});
-							return mappedAuthorities;
-						}
-						)
-					)
-			)
+			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers("/logged-out").permitAll()
+				.anyRequest().authenticated())
+			.oauth2Login(oauth2Login -> oauth2Login
+//				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+//					.userAuthoritiesMapper(this.userAuthoritiesMapper()))
+				.loginPage("/oauth2/authorization/messaging-client-oidc"))
 			.oauth2Client(withDefaults())
-			.logout(logout ->
-				logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
+			.logout(logout -> logout
+				.logoutSuccessHandler(logoutSuccessHandler));
+		// @formatter:on
 		return http.build();
 	}
-	// @formatter:on
 
-	private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+	@Bean
+	LogoutSuccessHandler logoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
 		OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
 				clientRegistrationRepository);
 
@@ -110,6 +90,29 @@ public class SecurityConfig {
 		oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/logged-out");
 
 		return oidcLogoutSuccessHandler;
+	}
+
+	@Bean
+	GrantedAuthoritiesMapper userAuthoritiesMapper() {
+		return authorities -> {
+
+			Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+			mappedAuthorities.addAll(authorities);
+			authorities.forEach(authority -> {
+
+				if (OidcUserAuthority.class.isInstance(authority)) {
+
+					log.info("authority:{}", authority);
+					OidcUserAuthority oidcUserAuthority = (OidcUserAuthority) authority;
+
+					OidcIdToken idToken = oidcUserAuthority.getIdToken();
+					List<String> role = idToken.getClaimAsStringList("role");
+					List<SimpleGrantedAuthority> roleList = role.stream().map(SimpleGrantedAuthority::new).toList();
+					mappedAuthorities.addAll(roleList);
+				}
+			});
+			return mappedAuthorities;
+		};
 	}
 
 	@Bean

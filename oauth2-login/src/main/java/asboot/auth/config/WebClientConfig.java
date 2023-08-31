@@ -15,8 +15,6 @@
  */
 package asboot.auth.config;
 
-import asboot.auth.authorization.DeviceCodeOAuth2AuthorizedClientProvider;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
@@ -28,6 +26,8 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import asboot.auth.authorization.DeviceCodeOAuth2AuthorizedClientProvider;
+
 /**
  * @author Joe Grandja
  * @author Steve Riesenberg
@@ -36,30 +36,25 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Bean
-    WebClient webClient(OAuth2AuthorizedClientManager authorizedClientManager) {
-		ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client =
-				new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
-		// @formatter:off
-		return WebClient.builder()
-				.apply(oauth2Client.oauth2Configuration())
-				.build();
-		// @formatter:on
+	@Bean
+	WebClient webClient(OAuth2AuthorizedClientManager authorizedClientManager) {
+		ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client = new ServletOAuth2AuthorizedClientExchangeFilterFunction(
+				authorizedClientManager);
+		return WebClient.builder().apply(oauth2Client.oauth2Configuration()).build();
 	}
 
-    @Bean
-    OAuth2AuthorizedClientManager authorizedClientManager(
-            ClientRegistrationRepository clientRegistrationRepository,
-            OAuth2AuthorizedClientRepository authorizedClientRepository) {
+	@Bean
+	OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
+			OAuth2AuthorizedClientRepository authorizedClientRepository) {
 
 		// @formatter:off
-		OAuth2AuthorizedClientProvider authorizedClientProvider =
-				OAuth2AuthorizedClientProviderBuilder.builder()
-						.authorizationCode()
-						.refreshToken()
-						.clientCredentials()
-						.provider(new DeviceCodeOAuth2AuthorizedClientProvider())
-						.build();
+		OAuth2AuthorizedClientProvider authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder
+			.builder()
+			.authorizationCode()
+			.refreshToken()
+			.clientCredentials()
+			.provider(new DeviceCodeOAuth2AuthorizedClientProvider())
+			.build();
 		// @formatter:on
 
 		DefaultOAuth2AuthorizedClientManager authorizedClientManager = new DefaultOAuth2AuthorizedClientManager(
@@ -67,8 +62,8 @@ public class WebClientConfig {
 		authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider);
 
 		// Set a contextAttributesMapper to obtain device_code from the request
-		authorizedClientManager.setContextAttributesMapper(DeviceCodeOAuth2AuthorizedClientProvider
-				.deviceCodeContextAttributesMapper());
+		authorizedClientManager.setContextAttributesMapper(
+				DeviceCodeOAuth2AuthorizedClientProvider.deviceCodeContextAttributesMapper());
 
 		return authorizedClientManager;
 	}

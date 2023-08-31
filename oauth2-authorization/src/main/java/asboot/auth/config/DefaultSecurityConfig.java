@@ -23,23 +23,16 @@ public class DefaultSecurityConfig {
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 		// @formatter:off
 		http
-			.authorizeHttpRequests(authorize ->
-				authorize
-					.requestMatchers("/assets/**", "/webjars/**", "/login").permitAll()
-					.anyRequest().authenticated()
-			)
+			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers("/assets/**", "/webjars/**", "/login").permitAll()
+				.anyRequest().authenticated())
 			// Form login handles the redirect to the login page from the
 			// authorization server filter chain
-			.formLogin(formLogin ->
-				formLogin
-					.loginPage("/login")
-			)
-			.oauth2Login(oauth2Login ->
-				oauth2Login
-					.loginPage("/login")
-					.successHandler(authenticationSuccessHandler())
-			);
-		
+			.formLogin(formLogin -> formLogin
+				.loginPage("/login"))
+			.oauth2Login(oauth2Login -> oauth2Login
+				.loginPage("/login")
+				.successHandler(authenticationSuccessHandler()));
 		// @formatter:on
 		return http.build();
 	}

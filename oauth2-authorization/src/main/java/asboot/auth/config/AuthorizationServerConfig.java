@@ -70,9 +70,10 @@ public class AuthorizationServerConfig {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
 		// @formatter:off
-		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-			.authorizationEndpoint(authorizationEndpoint ->
-				authorizationEndpoint.consentPage(CONSENT_PAGE_URL))
+		http
+			.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+			.authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint
+				.consentPage(CONSENT_PAGE_URL))
 			.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
 		
 		http
@@ -81,12 +82,10 @@ public class AuthorizationServerConfig {
 			.exceptionHandling(exceptions -> exceptions
 				.defaultAuthenticationEntryPointFor(
 					new LoginUrlAuthenticationEntryPoint(LOGIN_FORM_URL),
-					new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-				)
-			)
+					new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
 			// Accept access tokens for User Info and/or Client Registration
-			.oauth2ResourceServer(resourceServer ->
-				resourceServer.jwt(Customizer.withDefaults()));
+			.oauth2ResourceServer(resourceServer -> resourceServer
+				.jwt(Customizer.withDefaults()));
 		// @formatter:on
 		return http.build();
 	}
@@ -141,16 +140,16 @@ public class AuthorizationServerConfig {
 
 	@Bean
 	OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
-		return (context) -> {
+		return context -> {
 			OAuth2TokenType tokenType = context.getTokenType();
 			AuthorizationGrantType grantType = context.getAuthorizationGrantType();
-			Authentication principal = context.getPrincipal();
 
 			if (AuthorizationGrantType.AUTHORIZATION_CODE.equals(grantType)
 					|| AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
 				if (OAuth2TokenType.ACCESS_TOKEN.equals(tokenType)
 						|| OidcParameterNames.ID_TOKEN.equals(tokenType.getValue())) {
 
+					Authentication principal = context.getPrincipal();
 					List<String> authorities = principal.getAuthorities().stream().map(item -> item.getAuthority())
 							.toList();
 					log.info("authorities:{}", authorities);

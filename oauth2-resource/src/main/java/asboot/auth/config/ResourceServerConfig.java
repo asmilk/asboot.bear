@@ -19,17 +19,15 @@ import java.util.Collection;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -46,47 +44,35 @@ public class ResourceServerConfig {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//		http
-//			.securityMatcher("/messages/**")
-//				.authorizeHttpRequests()
-//					.requestMatchers("/messages/**").hasAuthority("SCOPE_message.read")
-//					.and()
-//			.oauth2ResourceServer()
-//				.jwt();
 		// @formatter:off
 		http
-			.authorizeHttpRequests(authorize -> 
-				authorize
-					.requestMatchers("/messages/**").hasAuthority("SCOPE_message.read")
-					.anyRequest().authenticated())
-			.oauth2ResourceServer(oauth2ResourceServer ->
-//				oauth2ResourceServer.jwt(Customizer.withDefaults())
-				oauth2ResourceServer.jwt(jwt -> jwt.jwtAuthenticationConverter(new Converter<Jwt, AbstractAuthenticationToken>(){
-
-					@Override
-					public AbstractAuthenticationToken convert(Jwt source) {
-						JwtAuthenticationConverter conver = new JwtAuthenticationConverter();
-						conver.setJwtGrantedAuthoritiesConverter(new Converter<Jwt, Collection<GrantedAuthority>>(){
-
-							@Override
-							public Collection<GrantedAuthority> convert(Jwt source) {
-								Collection<GrantedAuthority> scope = new JwtGrantedAuthoritiesConverter().convert(source);
-								JwtGrantedAuthoritiesConverter roleConverter = new JwtGrantedAuthoritiesConverter();
-								roleConverter.setAuthorityPrefix("");
-								roleConverter.setAuthoritiesClaimName("role");
-								Collection<GrantedAuthority> role = roleConverter.convert(source);
-								scope.addAll(role);
-								return scope;
-							}
-							
-						});
-						return conver.convert(source);
-					}
-					
-				}))
-			);
+			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers("/messages/**").hasAuthority("SCOPE_message.read")
+				.anyRequest().authenticated())
+			.oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer
+//				.jwt(jwt -> jwt.jwtAuthenticationConverter(this.jwtAuthenticationConverter()))
+				.jwt(Customizer.withDefaults()));
 		// @formatter:on
 		return http.build();
+	}
+
+	@Bean
+	JwtAuthenticationConverter jwtAuthenticationConverter() {
+
+		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+		converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+
+			Collection<GrantedAuthority> scope = new JwtGrantedAuthoritiesConverter().convert(jwt);
+
+			JwtGrantedAuthoritiesConverter grantedConverter = new JwtGrantedAuthoritiesConverter();
+			grantedConverter.setAuthorityPrefix("");
+			grantedConverter.setAuthoritiesClaimName("role");
+			Collection<GrantedAuthority> role = grantedConverter.convert(jwt);
+			scope.addAll(role);
+
+			return scope;
+		});
+		return converter;
 	}
 
 	@Bean
