@@ -11,9 +11,17 @@
 <div class="container">
 	<h6>hasRole:</h6>
 	<ul>
-		<li sec:authorize="hasRole('ROLE_USER')">[ROLE_USER]</li>
-		<li sec:authorize="hasRole('ROLE_STAFF')">[ROLE_STAFF]</li>
-		<li sec:authorize="hasRole('ROLE_ADMIN')">[ROLE_ADMIN]</li>
+		<li sec:authorize="hasRole('USER')">[ROLE_USER]</li>
+		<li sec:authorize="hasRole('STAFF')">[ROLE_STAFF]</li>
+		<li sec:authorize="hasRole('ADMIN')">[ROLE_ADMIN]</li>
+	</ul>
+	<ul>
+		<li sec:authorize="hasAuthority('OIDC_USER')">[OIDC_USER]</li>
+		<li sec:authorize="hasAuthority('SCOPE_openid')">[SCOPE_openid]</li>
+		<li sec:authorize="hasAuthority('SCOPE_profile')">[SCOPE_profile]</li>
+		<li sec:authorize="hasAuthority('SCOPE_email')">[SCOPE_email]</li>
+		<li sec:authorize="hasAuthority('SCOPE_address')">[SCOPE_address]</li>
+		<li sec:authorize="hasAuthority('SCOPE_phone')">[SCOPE_phone]</li>
 	</ul>
 	<dl>
 		<dt>name:</dt>
@@ -30,6 +38,10 @@
 		<dd sec:authentication="principal.claims['role']" />
 		<dt>principal.idToken.tokenValue:</dt>
 		<dd sec:authentication="principal.idToken.tokenValue" />
+		<dt>principal.userInfo:</dt>
+		<dd sec:authentication="principal.userInfo" />
+		<dt>principal.userInfo.claims:</dt>
+		<dd sec:authentication="principal.userInfo.claims" />
 		<dt>credentials:</dt>
 		<dd sec:authentication="credentials" />
 		<dt>authorities:</dt>
@@ -37,7 +49,9 @@
 		<dt>details:</dt>
 		<dd sec:authentication="details" />
 		<dt>accessToken.tokenValue:</dt>
-		<dd th:text="${authorizedClient}"></dd>
+		<dd th:text="${authorizedClient.accessToken.tokenValue}"></dd>
+		<dt>refreshToken.tokenValue:</dt>
+		<dd th:text="${authorizedClient.refreshToken.tokenValue}"></dd>
 	</dl>
     <div th:replace="~{page-templates :: error-message}"></div>
     <div th:replace="~{page-templates :: message-list}"></div>

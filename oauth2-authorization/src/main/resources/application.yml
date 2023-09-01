@@ -6,6 +6,37 @@ spring:
     cache: false
   security:
     oauth2:
+      authorizationserver:
+        issuer: "http://localhost:9000"
+        client:
+          messaging-client:
+            registration:
+              client-id: "messaging-client"
+              client-secret: "{noop}secret"
+              client-authentication-methods:
+                - "client_secret_basic"
+              authorization-grant-types:
+                - "authorization_code"
+                - "refresh_token"
+                - "client_credentials"
+              redirect-uris:
+                - "http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc"
+                - "http://127.0.0.1:8080/authorized"
+              post-logout-redirect-uris:
+                - "http://127.0.0.1:8080/logged-out"
+              scopes:
+                - "openid"
+                - "profile"
+                - "email"
+                - "address"
+                - "phone"
+                - "message.read"
+                - "message.write"
+            require-authorization-consent: true
+            token:
+              access-token-time-to-live: PT5M
+              refresh-token-time-to-live: PT10M
+              reuse-refresh-tokens: true
       client:
         registration:
           google-idp:

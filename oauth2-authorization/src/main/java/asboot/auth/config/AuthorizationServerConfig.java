@@ -3,8 +3,12 @@ package asboot.auth.config;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,23 +23,25 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
-import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
@@ -64,8 +70,29 @@ public class AuthorizationServerConfig {
 	public RSAPrivateKey privateKey;
 
 	@Bean
+	// DefaultOidcUserInfoMapper
+	Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper(UserDetailsService service) {
+		return context -> {
+			OAuth2AccessToken accessToken = context.getAccessToken();
+			OAuth2Authorization authorization = context.getAuthorization();
+			Set<String> scopes = accessToken.getScopes();
+			String name = authorization.getPrincipalName();
+			UserDetails user = service.loadUserByUsername(name);
+
+			Map<String, Object> claims = new HashMap<>();
+			claims.put(StandardClaimNames.SUB, name);
+
+			if (scopes.contains(OidcScopes.PROFILE)) {
+				claims.put(StandardClaimNames.NAME, user.getUsername());
+			}
+			return new OidcUserInfo(claims);
+		};
+	}
+
+	@Bean
 	@Order(Ordered.HIGHEST_PRECEDENCE)
-	SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
+			Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper) throws Exception {
 
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
@@ -73,8 +100,12 @@ public class AuthorizationServerConfig {
 		http
 			.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
 			.authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint
+				// DefaultConsentPage.displayConsent
 				.consentPage(CONSENT_PAGE_URL))
-			.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
+//			.oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
+			.oidc(oidc -> oidc
+				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+					.userInfoMapper(userInfoMapper)));
 		
 		http
 			// Redirect to the login page when not authenticated from the
@@ -90,9 +121,10 @@ public class AuthorizationServerConfig {
 		return http.build();
 	}
 
-	// @formatter:off
-    @Bean
-    RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
+	/*
+	@Bean
+	RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
+		// @formatter:off
 		RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
 				.clientId("messaging-client")
 				.clientSecret("{noop}secret")
@@ -110,8 +142,10 @@ public class AuthorizationServerConfig {
 				.scope(OidcScopes.PHONE)
 				.scope("message.read")
 				.scope("message.write")
+				.tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(5)).build())
 				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
 				.build();
+		// @formatter:on
 
 		// Save registered client's in db as if in-memory
 		JdbcRegisteredClientRepository registeredClientRepository = new JdbcRegisteredClientRepository(jdbcTemplate);
@@ -119,8 +153,7 @@ public class AuthorizationServerConfig {
 
 		return registeredClientRepository;
 	}
-
-    // @formatter:on
+	*/
 
 	@Bean
 	OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
@@ -156,7 +189,6 @@ public class AuthorizationServerConfig {
 					context.getClaims().claims(claims -> claims.put("role", new ArrayList<String>(authorities)));
 				}
 			}
-
 		};
 	}
 
@@ -173,22 +205,26 @@ public class AuthorizationServerConfig {
 		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
 	}
 
+	/*
 	@Bean
 	AuthorizationServerSettings authorizationServerSettings() {
+		// @formatter:off
 		return AuthorizationServerSettings.builder()
-//				.issuer("https://example.com")
-//				.authorizationEndpoint("/oauth2/authorize")
-//				.deviceAuthorizationEndpoint("/oauth2/device_authorization")
-//				.deviceVerificationEndpoint("/oauth2/device_verification")
-//				.tokenEndpoint("/oauth2/token")
-//				.tokenIntrospectionEndpoint("/oauth2/introspect")
-//				.tokenRevocationEndpoint("/oauth2/revoke")
-//				.jwkSetEndpoint("/oauth2/jwks")
-//				.oidcLogoutEndpoint("/connect/logout")
-//				.oidcUserInfoEndpoint("/userinfo")
-//				.oidcClientRegistrationEndpoint("/connect/register")
+				.issuer("https://example.com")
+				.authorizationEndpoint("/oauth2/authorize") //
+				.deviceAuthorizationEndpoint("/oauth2/device_authorization")
+				.deviceVerificationEndpoint("/oauth2/device_verification")
+				.tokenEndpoint("/oauth2/token")
+				.tokenIntrospectionEndpoint("/oauth2/introspect")
+				.tokenRevocationEndpoint("/oauth2/revoke")
+				.jwkSetEndpoint("/oauth2/jwks")
+				.oidcLogoutEndpoint("/connect/logout")
+				.oidcUserInfoEndpoint("/userinfo")
+				.oidcClientRegistrationEndpoint("/connect/register")
 				.build();
+		// @formatter:on
 	}
+	*/
 
 	@Bean
 	EmbeddedDatabase embeddedDatabase() {
