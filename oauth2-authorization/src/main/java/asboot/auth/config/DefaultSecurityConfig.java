@@ -30,6 +30,8 @@ public class DefaultSecurityConfig {
 			// authorization server filter chain
 			.formLogin(formLogin -> formLogin
 				.loginPage("/login"))
+			.rememberMe(rememberMe -> rememberMe
+				.tokenValiditySeconds(60))
 			.oauth2Login(oauth2Login -> oauth2Login
 				.loginPage("/login")
 				.successHandler(authenticationSuccessHandler()));

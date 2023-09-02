@@ -34,9 +34,11 @@ spring:
                 - "message.write"
             require-authorization-consent: true
             token:
+              access-token-format: self-contained
               access-token-time-to-live: PT5M
               refresh-token-time-to-live: PT10M
               reuse-refresh-tokens: true
+              id-token-signature-algorithm: RS256
       client:
         registration:
           google-idp:
