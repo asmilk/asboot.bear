@@ -1,0 +1,14 @@
+{
+	"properties": [
+		{
+			"name": "jwk.public-key",
+			"type": "java.lang.String",
+			"description": "classpath:rsa_public_key.pem"
+		},
+		{
+			"name": "jwk.private-key",
+			"type": "java.lang.String",
+			"description": "classpath:pkcs8_rsa_private_key.pem"
+		}
+	]
+}
